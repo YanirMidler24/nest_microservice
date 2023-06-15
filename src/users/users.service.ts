@@ -6,10 +6,15 @@ import { User } from './schema/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UpdateUserDto } from './dto/update-user.do';
-
+import { JwtService } from '@nestjs/jwt';
+import { TokenService } from '../auth/strategy/refresh_token'
 @Injectable()
 export class UsersService {
-    constructor(@InjectModel(User.name) private userModel: Model<User>) { }
+    constructor(
+        @InjectModel(User.name) private userModel: Model<User>,
+        private JwtService: JwtService,
+        private TokenRefresh: TokenService
+    ) { }
 
 
     async getAllUser(): Promise<User[]> {
@@ -69,4 +74,26 @@ export class UsersService {
             usernameId: id
         }).exec()
     }
+
+    validateUser(accessToken: string): string {
+        try {
+            const decodedToken = this.JwtService.verify(accessToken);
+            const userId = decodedToken.sub;
+
+            // Validate the user or perform additional checks if needed
+            const user = this.userModel.findOne({
+                usernameId: userId
+            })
+            if (user) {
+
+                // Generate a new refresh token
+                const refreshToken = this.TokenRefresh.generateRefreshToken(userId);
+                return refreshToken;
+            }
+
+        } catch (error) {
+            return null;
+        }
+    }
+
 }

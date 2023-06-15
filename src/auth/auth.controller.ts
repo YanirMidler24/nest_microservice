@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Post, Body, Get, Param, Patch, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Delete, UseGuards, Headers } from '@nestjs/common';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { User } from 'src/users/schema/user.schema';
@@ -16,6 +16,16 @@ export class AuthController {
         return this.authService.getAllUser()
     }
 
+    @UseGuards(AuthGuard)
+    @Get('validate')
+    async validateUser(
+      @Headers('authorization') bearerToken: string,
+    ) {
+      // Extract the token from the Authorization header
+      const accessToken = bearerToken.replace('Bearer ', '');
+  
+      return this.authService.validateUser(accessToken);
+    }
     @UseGuards(AuthGuard)
     @Get('/:id')
     async getUserById(@Param('id') id: string): Promise<User> {
